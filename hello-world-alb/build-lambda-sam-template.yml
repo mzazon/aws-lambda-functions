@@ -35,7 +35,7 @@ steps:
 #- bash: pip install aws-sam-cli
 - task: AWSShellScript@1
   inputs:
-    awsCredentials: 'qh-aws-cc-dev-acct'
+    awsCredentials: 'mz-aws-dev-acct'
     regionName: 'us-east-2'
     arguments: 'testarg'
     scriptType: 'inline'
