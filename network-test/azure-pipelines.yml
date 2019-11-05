@@ -1,5 +1,5 @@
-# Template pipeline for deploying SAM lambdas to AWS
-# Mike Zazon - Quantum Health
+# Pipeline for deploying SAM lambdas to AWS
+# Mike Zazon
 # https://aka.ms/yaml
 
 trigger:
@@ -8,7 +8,7 @@ trigger:
     - master
   paths:
     include:
-    - subdir7/*
+    - /*
 
 stages:
 - stage: AWSCLIVersion
@@ -30,12 +30,12 @@ stages:
       vmImage: 'ubuntu-latest'
     steps:
     - task: CloudFormationCreateOrUpdateStack@1
-      displayName: 'Create/Update Stack: qh-lambda-network-test'
+      displayName: 'Create/Update Stack: mz-lambda-network-test'
       inputs:
-        awsCredentials: 'qh-aws-cc-dev-acct'
+        awsCredentials: 'mz-aws-dev-acct'
         regionName: 'us-east-2'
-        stackName: 'qh-lambda-network-test'
+        stackName: 'mz-lambda-network-test'
         templateSource: 'file'
-        templateFile: 'subdir7/lambda-network-test.yaml'
+        templateFile: 'lambda-network-test.yaml'
         useChangeSet: true
         changeSetName: 'Lambda-Network-Test-ChangeSet'
