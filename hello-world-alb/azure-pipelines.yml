@@ -1,5 +1,5 @@
-# Template pipeline for deploying SAM lambdas to AWS
-# Mike Zazon - Quantum Health
+# AzureDevOps Pipeline for deploying SAM lambdas to AWS
+# Mike Zazon
 # https://aka.ms/yaml
 
 trigger:
@@ -8,7 +8,7 @@ trigger:
     - master
   paths:
     include:
-    - subdir9/*
+    - /*
 
 stages:
 - stage: BuildAndPublish
@@ -23,20 +23,20 @@ stages:
     steps:
     - template: build-lambda-sam-template.yml
       parameters:
-        awsCredentials: 'qh-aws-ss-prod-acct'
+        awsCredentials: 'aws-ss-prod-acct'
         regionName: 'us-east-2'
-        lambdaProjectPath: 'subdir9/template.yml'
-        s3bucket: 'qh-us-east-2-sam-depoy'
-- stage: DeployToAWSCCDev
+        lambdaProjectPath: 'template.yml'
+        s3bucket: 'mz-us-east-2-sam-deploy'
+- stage: DeployToAWSDev
   jobs:
 #      matrix:
 #        Python37:
 #          python.version: '3.7'
-  - deployment: DeployToAWSCCDev
+  - deployment: DeployToAWSDev
     pool:
       vmImage: 'ubuntu-latest'
-    displayName: 'Deploy to AWS CC Dev'
-    environment: 'qh-aws-ss-prod-acct'
+    displayName: 'Deploy to AWS Dev'
+    environment: 'aws-ss-prod-acct'
     strategy:
         runOnce:
           deploy:
@@ -44,9 +44,9 @@ stages:
             - download: none
             - template: deploy-lambda-sam-template.yml
               parameters:
-                awsCredentials: 'qh-aws-ss-prod-acct'
+                awsCredentials: 'aws-ss-prod-acct'
                 regionName: 'us-east-2'
-                s3bucket: 'qh-us-east-2-sam-depoy'
+                s3bucket: 'mz-us-east-2-sam-deploy'
                 stackName: 'aws-sam-hello-world-alb'
 #- stage: ValidateDevEndpointDeployment
 #  jobs:
