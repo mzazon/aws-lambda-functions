@@ -1,0 +1,34 @@
+AWSTemplateFormatVersion : 2010-09-09
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      Path: /
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+          'use strict';var dns=require('dns');var dnsLookup=function(domain,timeout,callback){var callbackCalled=false;var doCallback=function(err,domains){if(callbackCalled)return;callbackCalled=true;callback(err,domains)};setTimeout(function(){doCallback(new Error("Timeout exceeded"),null)},timeout);dns.resolveAny(domain,doCallback)};var lambdaHandler=function(event,context,callback){const connData={port:event.context['my-port'],host:event.context['my-host'],timeout:event.context['my-timeout']};const timeout=typeof connData.timeout!=='undefined'?parseInt(connData.timeout):50;const net=require('net');var message='Whoops port '+connData.port+' on host `'+connData.host+'` seems closed!';const client=net.connect(connData,function(){message='Port '+connData.port+' on '+connData.host+' is open!';callback(null,message);client.destroy();dnsLookup(connData.host,1000,function(err,addresses){console.log("Results for dnsLookup, timeout 1000:");if(err){console.log("Err: "+err);return}console.log(addresses)})});client.setTimeout(timeout,function(){client.destroy(new Error(message),null)});client.on('error',function(err){callback(new Error(message),null)})};exports.checkPortOpen=lambdaHandler;if(require.main===module){var lambdaContext={context:{'my-host':process.env.MY_HOST,'my-port':process.env.MY_PORT,'my-timeout':process.env.MY_TIMEOUT}};lambdaHandler(lambdaContext,null,function(err,data){if(err){console.log(err.message);return null}console.log(data)})};
+      Handler: index.checkPortOpen
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: nodejs8.10
+      Timeout: 60
+      MemorySize: 128
+      VpcConfig:
+        SubnetIds:
+          - subnet-0011e740c516bb568
+          - subnet-06d548b20f78cc7df
+        SecurityGroupIds:
+          - sg-086e5ccc85c3ca0ef

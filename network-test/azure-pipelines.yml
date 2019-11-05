@@ -1,0 +1,41 @@
+# Template pipeline for deploying SAM lambdas to AWS
+# Mike Zazon - Quantum Health
+# https://aka.ms/yaml
+
+trigger:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - subdir7/*
+
+stages:
+- stage: AWSCLIVersion
+  jobs:
+  - job: Version
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - bash: aws --version
+- stage: CFN
+  jobs:
+  - job: ValidateCFN
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - bash: aws --version
+  - job: DeployCFN
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: CloudFormationCreateOrUpdateStack@1
+      displayName: 'Create/Update Stack: qh-lambda-network-test'
+      inputs:
+        awsCredentials: 'qh-aws-cc-dev-acct'
+        regionName: 'us-east-2'
+        stackName: 'qh-lambda-network-test'
+        templateSource: 'file'
+        templateFile: 'subdir7/lambda-network-test.yaml'
+        useChangeSet: true
+        changeSetName: 'Lambda-Network-Test-ChangeSet'

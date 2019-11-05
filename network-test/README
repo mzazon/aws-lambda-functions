@@ -1,0 +1,9 @@
+generate a test event in the lambda console, here is the schema for context
+
+{
+  "context": {
+    "my-host": "qhdbdev01.quantum.qh-quantum.com",
+    "my-port": 1433,
+    "my-timeout": 75
+  }
+}
