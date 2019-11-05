@@ -1,0 +1,57 @@
+# Template pipeline for deploying SAM lambdas to AWS
+# Mike Zazon - Quantum Health
+# https://aka.ms/yaml
+
+trigger:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - subdir9/*
+
+stages:
+- stage: BuildAndPublish
+  jobs:
+  - job: Build
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      matrix:
+        Python37:
+          python.version: '3.7'
+    steps:
+    - template: build-lambda-sam-template.yml
+      parameters:
+        awsCredentials: 'qh-aws-ss-prod-acct'
+        regionName: 'us-east-2'
+        lambdaProjectPath: 'subdir9/template.yml'
+        s3bucket: 'qh-us-east-2-sam-depoy'
+- stage: DeployToAWSCCDev
+  jobs:
+#      matrix:
+#        Python37:
+#          python.version: '3.7'
+  - deployment: DeployToAWSCCDev
+    pool:
+      vmImage: 'ubuntu-latest'
+    displayName: 'Deploy to AWS CC Dev'
+    environment: 'qh-aws-ss-prod-acct'
+    strategy:
+        runOnce:
+          deploy:
+            steps:
+            - download: none
+            - template: deploy-lambda-sam-template.yml
+              parameters:
+                awsCredentials: 'qh-aws-ss-prod-acct'
+                regionName: 'us-east-2'
+                s3bucket: 'qh-us-east-2-sam-depoy'
+                stackName: 'aws-sam-hello-world-alb'
+#- stage: ValidateDevEndpointDeployment
+#  jobs:
+#  - job: TestDevAPIGatewayEndpoint
+#    pool:
+#      vmImage: 'ubuntu-latest'
+#    steps:
+#    - bash: curl -sSf https://4uoiq58czl.execute-api.us-east-2.amazonaws.com/Prod/api/S3Proxy

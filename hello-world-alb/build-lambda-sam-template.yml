@@ -1,0 +1,56 @@
+parameters:
+  awsCredentials: 'null'
+  regionName: 'null'
+  lambdaProjectPath: 'null'
+  s3bucket: 'null'
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '$(python.version)'
+  displayName: 'Use Python $(python.version)'
+- bash: |
+    if [ -z "$AWSCREDENTIALS" ]; then
+      echo "##vso[task.logissue type=error;]Missing template parameter \"awsCredentials\""
+      echo "##vso[task.complete result=Failed;]"
+    fi
+    if [ -z "$REGIONNAME" ]; then
+      echo "##vso[task.logissue type=error;]Missing template parameter \"regionName\""
+      echo "##vso[task.complete result=Failed;]"
+    fi
+    if [ -z "$LAMBDAPROJECTPATH" ]; then
+      echo "##vso[task.logissue type=error;]Missing template parameter \"lambdaProjectPath\""
+      echo "##vso[task.complete result=Failed;]"
+    fi
+    if [ -z "$S3BUCKET" ]; then
+      echo "##vso[task.logissue type=error;]Missing template parameter \"s3bucket\""
+      echo "##vso[task.complete result=Failed;]"
+    fi
+  env:
+    AWSCREDENTIALS: ${{ parameters.awsCredentials }}
+    REGIONNAME: ${{ parameters.regionName }}
+    LAMBDAPROJECTPATH: ${{ parameters.lambdaProjectPath }}
+    S3BUCKET: ${{ parameters.s3bucket }}
+  displayName: Check for required parameters
+#- bash: pip install aws-sam-cli
+- task: AWSShellScript@1
+  inputs:
+    awsCredentials: 'qh-aws-cc-dev-acct'
+    regionName: 'us-east-2'
+    arguments: 'testarg'
+    scriptType: 'inline'
+    inlineScript: |
+      pip install aws-sam-cli
+      sam package --template-file ${{ parameters.lambdaProjectPath }} --output-template-file serverless-output.yaml --s3-bucket ${{ parameters.s3bucket }}
+#- bash: |
+#    sam package --template-file $LAMBDAPROJECTPATH --output-template-file serverless-output.yaml --s3-bucket $S3BUCKET
+#  env:
+#    AWSCREDENTIALS: ${{ parameters.awsCredentials }}
+#    REGIONNAME: ${{ parameters.regionName }}
+#    LAMBDAPROJECTPATH: ${{ parameters.lambdaProjectPath }}
+#    S3BUCKET: ${{ parameters.s3bucket }}
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.SourcesDirectory)/serverless-output.yaml'
+    ArtifactName: 'SAMArtifact'
+    publishLocation: 'Container'

@@ -1,0 +1,49 @@
+parameters:
+  awsCredentials: 'null'
+  regionName: 'null'
+  stackName: 'null'
+
+steps:
+- bash: |
+    if [ -z "$AWSCREDENTIALS" ]; then
+      echo "##vso[task.logissue type=error;]Missing template parameter \"awsCredentials\""
+      echo "##vso[task.complete result=Failed;]"
+    fi
+    if [ -z "$REGIONNAME" ]; then
+      echo "##vso[task.logissue type=error;]Missing template parameter \"regionName\""
+      echo "##vso[task.complete result=Failed;]"
+    fi
+    if [ -z "$STACKNAME" ]; then
+      echo "##vso[task.logissue type=error;]Missing template parameter \"stackName\""
+      echo "##vso[task.complete result=Failed;]"
+    fi
+  env:
+    AWSCREDENTIALS: ${{ parameters.awsCredentials }}
+    REGIONNAME: ${{ parameters.regionName }}
+    STACKNAME: ${{ parameters.stackName }}
+- task: DownloadBuildArtifacts@0
+  inputs:
+    buildType: 'current'
+    downloadType: 'single'
+    artifactName: 'SAMArtifact'
+    downloadPath: '$(System.ArtifactsDirectory)'
+- task: AmazonWebServices.aws-vsts-tools.CloudFormationCreateOrUpdateStack.CloudFormationCreateOrUpdateStack@1
+  displayName: 'Create/Update Stack: ${{ parameters.stackName }}'
+  inputs:
+    awsCredentials: '${{ parameters.awsCredentials }}'
+    regionName: '${{ parameters.regionName }}'
+    stackName: '${{ parameters.stackName }}'
+    templateFile: '$(System.ArtifactsDirectory)/SAMArtifact/serverless-output.yaml'
+    templateParameters: |
+      [
+        {
+          "ParameterKey": "Subnets",
+          "ParameterValue": "subnet-0011e740c516bb568, subnet-06d548b20f78cc7df"
+        },
+        {
+          "ParameterKey": "VpcId",
+          "ParameterValue": "vpc-011d60ac8336b7930"
+        }        
+      ]
+    useChangeSet: true
+    changeSetName: 'AWS-SAM-ChangeSet'
